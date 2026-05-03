@@ -1,6 +1,11 @@
+import type { Server as HttpServer } from "node:http";
 import WebSocket, { WebSocketServer } from "ws";
 
 type JsonPayload = unknown;
+type BroadcastMatchCreated = (match: JsonPayload) => void;
+type WebSocketServerHandlers = {
+  broadcastMatchCreated: BroadcastMatchCreated;
+};
 
 export const sendJson = (socket: WebSocket, payload: JsonPayload): void => {
   if (socket.readyState !== WebSocket.OPEN) {
@@ -20,7 +25,9 @@ export const broadcast = (wss: WebSocketServer, payload: JsonPayload): void => {
   }
 };
 
-export const attachWebSocketServer = (server) => {
+export const attachWebSocketServer = (
+  server: HttpServer,
+): WebSocketServerHandlers => {
   const wss = new WebSocketServer({
     server,
     path: "/ws",
@@ -32,7 +39,7 @@ export const attachWebSocketServer = (server) => {
     socket.on("error", console.error);
   });
 
-  function broadcastMatchCreated(match) {
+  function broadcastMatchCreated(match: JsonPayload): void {
     broadcast(wss, { type: "match_create", data: match });
   }
 
